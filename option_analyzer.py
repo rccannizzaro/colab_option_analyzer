@@ -324,49 +324,57 @@ def update_plot(position = None
                      )
 
 
-   fig.update_layout( title_x = 0.5
-                     , autosize = False
-                     , width = 1400
-                     , height = 900
-                     , hovermode = 'x unified'
-                     , hoverlabel = dict(bgcolor = "rgba(240,240,250,0.5)")
-                     , showlegend = showLegend
-                     , legend = dict(x = 0.01, y = 0.85 #y = 0.99 # Positions for the legend
-                                    , traceorder = "normal"
-                                    , bgcolor = "rgba(240,240,250,0.5)"
-                                    , bordercolor = "darkblue"
-                                    , borderwidth = 1
-                                    , font = dict(size = 10)
-                                    #, itemsizing = 'constant'
-                                    )
-                     #, shapes = [spot_line]
-                     )
+      fig.update_layout( title_x = 0.5
+                        , autosize = False
+                        , width = 1400
+                        , height = 900
+                        , hovermode = 'x unified'
+                        , hoverlabel = dict(bgcolor = "rgba(240,240,250,0.5)")
+                        , showlegend = showLegend
+                        , legend = dict(x = 0.01, y = 0.85 #y = 0.99 # Positions for the legend
+                                       , traceorder = "normal"
+                                       , bgcolor = "rgba(240,240,250,0.5)"
+                                       , bordercolor = "darkblue"
+                                       , borderwidth = 1
+                                       , font = dict(size = 10)
+                                       #, itemsizing = 'constant'
+                                       )
+                        #, shapes = [spot_line]
+                        )
 
 
 
-   annotation_text = "<span style='text-align: left'><b>Position:                                </b></span>"
-   for idx, row in position.iterrows():
-      delta_t0 = bsm(position.loc[[idx]], spotPrice = spotPrice, atTime = T_0, ir = ir, iv = iv_reference, resultType = "delta")[0]/row['qty']
-      annotation_text += f"<br>&nbsp;<span style = 'color: {'darkblue' if row['qty'] > 0 else 'darkred'}'>{row['qty']:+} {row['expiryDttm']:%d%b} {row['strikePrice']} {row['optionType']} Δ {delta_t0:.2f}</span>"
+      # Aggregate all positions (quantity)
+      join_vars = ['optionType', 'strikePrice', 'expiryDate', 'expiryTime']
+      sorted_unique_position = position.sort_values(by = "openDttm", ascending = False).drop_duplicates(subset = join_vars).drop(columns = ["qty"])
+      net_position = position.groupby(join_vars, as_index = False).agg({'qty':'sum'})
+      # Remove entries where the net qty is zero
+      net_position = net_position[net_position['qty'] != 0]
+      # Join back with the list of positions to get the details of each trade
+      net_position = pd.merge(net_position, sorted_unique_position, on = join_vars)
+      annotation_text = "<span style='text-align: left'><b>Position:                                </b></span>"
+      for idx, row in net_position.iterrows():
+         delta_t0 = bsm(net_position.loc[[idx]], spotPrice = spotPrice, atTime = T_0, ir = ir, iv = iv_reference, resultType = "delta")[0]/row['qty']
+         annotation_text += f"<br>&nbsp;<span style = 'color: {'darkblue' if row['qty'] > 0 else 'darkred'}'>{row['qty']:+} {row['expiryDttm']:%d%b} {row['strikePrice']} {row['optionType']} Δ {delta_t0:.2f}</span>"
 
-   fig.add_annotation(
-         go.layout.Annotation(
-            text = annotation_text
-            , xref = "paper", yref = "paper"
-            , xanchor = "left"
-            , x = 0.01, y = 0.99
-            , showarrow = False
-            , bgcolor = "rgba(240,240,250,0.5)"
-            , bordercolor = "darkblue"
-            , borderwidth = 1
-            , font = dict(size = 10)
+      fig.add_annotation(
+            go.layout.Annotation(
+               text = annotation_text
+               , xref = "paper", yref = "paper"
+               , xanchor = "left"
+               , x = 0.01, y = 0.99
+               , showarrow = False
+               , bgcolor = "rgba(240,240,250,0.5)"
+               , bordercolor = "darkblue"
+               , borderwidth = 1
+               , font = dict(size = 10)
+            )
          )
-      )
 
-   fig.update_xaxes(title_text = "Spot Price", row = 7, col = 1)  # Adding title to the bottom subplot's x-axis
-   fig.update_yaxes(tickformat = "$,.1f")
-   fig.update_yaxes(tickformat = ",.1%", row = 2, col = 1)
-   fig.show()
+      fig.update_xaxes(title_text = "Spot Price", row = 7, col = 1)  # Adding title to the bottom subplot's x-axis
+      fig.update_yaxes(tickformat = "$,.1f")
+      fig.update_yaxes(tickformat = ",.1%", row = 2, col = 1)
+      fig.show()
 
 def app_init(portfolio = None, N_spot = 300, ir = 0.055, marketOpenTime = timedelta(hours = 9, minutes = 30), marketCloseTime = timedelta(hours = 16)):
    tickers_list = sorted(portfolio["ticker"].unique())
