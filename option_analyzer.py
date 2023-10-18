@@ -625,7 +625,7 @@ def update_expiration_selector(event, params = dict()):
 
    #IV_reference = np.array(option_IVs)
    #expiration_selector.value = expiration_selector.options[0]
-   update_time_selector(event)
+   update_time_selector(event, params)
 
 def update_time_selector(event, params = dict()):
 
