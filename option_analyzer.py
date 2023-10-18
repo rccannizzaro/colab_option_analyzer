@@ -462,6 +462,7 @@ def app_init(portfolio = None, N_spot = 300, ir = 0.055, marketOpenTime = timede
          , adjustment_selector = adjustment_selector
 
          , last_box = last_box
+         , outputWidget = widgets.Output()
       )
    
    # Configure observers
@@ -670,6 +671,7 @@ def sliders_change(event, params = dict()):
    wvega_checkbox = params.get("wvega_checkbox", None)
    legend_checkbox = params.get("legend_checkbox", None)
    show_pnl_open_checkbox = params.get("show_pnl_open_checkbox", None)
+   outputWidget = params.get("outputWidget", None)
 
    ir_slider = params.get("ir_slider", None)
    if trade_selector.value is None:
@@ -689,6 +691,7 @@ def sliders_change(event, params = dict()):
                , wVega = wvega_checkbox.value
                , showLegend = legend_checkbox.value
                , showPNLOpen = show_pnl_open_checkbox.value
+               , outputWidget = outputWidget
                )
 
 def app_run(portfolio = None, N_spot = 300, ir = 0.055, marketOpenTime = timedelta(hours = 9, minutes = 30), marketCloseTime = timedelta(hours = 16)):
@@ -711,7 +714,7 @@ def app_run(portfolio = None, N_spot = 300, ir = 0.055, marketOpenTime = timedel
    ir_slider = params.get("ir_slider", None)
    pos_details_table = params.get("pos_details_table", None)
    warning_label = params.get("warning_label", None)
-   out = params.get("out", None)
+   outputWidget = params.get("outputWidget", None)
 
    # Arrange sliders horizontally and display with plot
    header1 = widgets.HBox([ticker_dropdown, trade_selector, widgets.VBox([expiration_selector, adjustment_selector]), widgets.VBox([last_box, refresh_button])])
@@ -719,7 +722,7 @@ def app_run(portfolio = None, N_spot = 300, ir = 0.055, marketOpenTime = timedel
    sliders = widgets.HBox([time_slider, iv_slider, ir_slider])
    accordion = pn.Accordion(("Position Details", pos_details_table))
 
-   display(header1, header2, sliders, warning_label, accordion, out)
+   display(header1, header2, sliders, warning_label, accordion, outputWidget)
 
    # Initial Rendering
    refresh_quote_data(event = 1, params = params)
